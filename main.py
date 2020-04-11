@@ -68,10 +68,9 @@ def start_message(message):
     keyboard_markup.row('Пошук по координатам', 'Додати інформацію про випадок зараження')
     bot.send_message(message.chat.id, 'Яким чином ви бажаєте взаємодіяти з ботом?', reply_markup=keyboard_markup)
 
-
 #writes user's input to mongoDB
 def save_adress(message):
-	if hasattr(message, 'text'):
+	if (message.text!=None):
 	    users = db.users
 	    user["adress"] = message.text
 	    users.insert_one(user)
@@ -79,7 +78,7 @@ def save_adress(message):
 	else:
 		bot.send_message(message.chat.id, "Ви ввели некоректні дані")
 def enter_adress(message):
-	if hasattr(message, 'text'):
+	if (message.text!=None):
 	    msg = bot.send_message(message.from_user.id, "Укажіть адресу")
 	    user["name"] = message.text
 	    bot.register_next_step_handler(msg,save_adress)
@@ -104,7 +103,7 @@ def get_info_by_location(message):
 
 #sends statisics to user by coordinates
 def by_coordinates(message):
-	if hasattr(message, 'latitude'):
+	if (message.location!=None):
 		locationstring["latitude"] = message.location.latitude
 		locationstring["longitude"] = message.location.longitude
 		response = apiRequest(geo_url,get_headers("geocodeapi.p.rapidapi.com"),locationstring)
@@ -115,7 +114,7 @@ def by_coordinates(message):
 
 #sends statisics to user by country name
 def by_country_name(message):
-	if hasattr(message, 'text'):
+	if (message.text!=None):
 		country_cases = nameApiRequest(country_by_name_url, country_by_name_headers)
 		jsoned = json.loads(country_cases.text)
 		found=0
