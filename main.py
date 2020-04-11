@@ -5,12 +5,23 @@ import os
 import json
 
 covid_url = "https://coronavirus-monitor.p.rapidapi.com/coronavirus/random_masks_usage_instructions.php"
+covid_country_by_name = "https://coronavirus-monitor.p.rapidapi.com/coronavirus/latest_stat_by_country.php"
 geo_url   = "https://geocodeapi.p.rapidapi.com/GetNearestCities"
+
+locationstring = {"latitude":"","longitude":"","range":"0"}
+
 querystring = {"latitude":"","longitude":"","range":"0"}
+
 headers = {
     'x-rapidapi-host': "geocodeapi.p.rapidapi.com",
     'x-rapidapi-key': "e0148a3467msh96216911de4311bp11d63djsn470777193a84"
 }
+
+bot = telebot.TeleBot(os.environ.get("API"))
+
+def get_headers(host):
+    headers["x-rapidapi-host"]=host
+    return headers
 
 country_by_name_url = "https://coronavirus-monitor.p.rapidapi.com/coronavirus/cases_by_country.php"
 country_by_name_headers = {
@@ -22,9 +33,23 @@ def nameApiRequest(url, headers):
     return requests.request("GET", url, headers=headers)
 
 def apiRequest(url, headers, params):
-    return requests.request("GET", url, headers=headers, params=params)
+    return requests.request("GET", url, headers=headers, params=params).text
+
+
+def make_string(caption,data):
+    return caption + " : " + data + "\n"
+
+
+def get_stat_by_country(country):
+    response = apiRequest(covid_country_by_name, headers = get_headers("coronavirus-monitor.p.rapidapi.com"),params = {"country" : country})
+    jsoned = json.loads(response)
+
+    message = make_string("Обрана країна",jsoned["latest_stat_by_country"][0]["country_name"]) + make_string(" Усього випадків захворювання",jsoned["latest_stat_by_country"][0]["total_cases"]) + make_string(" За минулу добу" ,jsoned["latest_stat_by_country"][0]["new_cases"]) + make_string("Активні випадки",jsoned["latest_stat_by_country"][0]["active_cases"])+ make_string("Усього смертей",jsoned["latest_stat_by_country"][0]["total_deaths"])+ make_string("Смертей за останню добу",jsoned["latest_stat_by_country"][0]["new_deaths"])+ make_string("Усього видужаних",jsoned["latest_stat_by_country"][0]["total_recovered"])+ make_string("У критичному стані",jsoned["latest_stat_by_country"][0]["serious_critical"]) + make_string("Дата",jsoned["latest_stat_by_country"][0]["record_date"])
+    return message
+
 
 bot = telebot.TeleBot(os.environ.get("API"))
+
 @bot.message_handler(commands=['start'])
 def start_message(message):
     keyboard_markup = telebot.types.ReplyKeyboardMarkup(True, False)
@@ -67,6 +92,16 @@ def by_country_name(message):
 			found=1
 	if(found==0):
 		bot.send_message(message.chat.id, "На жаль, не має інформації про країну "+message.text)
+
+    
+@bot.message_handler(content_types=['location'])
+def get_info_by_location(message):
+    locationstring["latitude"] = message.location.latitude
+    locationstring["longitude"] = message.location.longitude
+    response = apiRequest(geo_url,get_headers("geocodeapi.p.rapidapi.com"),locationstring)
+    jsoned = json.loads(response)
+
+    bot.send_message(message.chat.id, get_stat_by_country(jsoned[0]["Country"]))
 
 def by_city_name(message):
 	bot.send_message(message.chat.id, "...")
