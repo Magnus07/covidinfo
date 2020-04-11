@@ -43,7 +43,6 @@ def make_string(caption,data):
 def get_stat_by_country(country):
     response = apiRequest(covid_country_by_name, headers = get_headers("coronavirus-monitor.p.rapidapi.com"),params = {"country" : country})
     jsoned = json.loads(response)
-
     message = make_string("Обрана країна",jsoned["latest_stat_by_country"][0]["country_name"]) + make_string(" Усього випадків захворювання",jsoned["latest_stat_by_country"][0]["total_cases"]) + make_string(" За минулу добу" ,jsoned["latest_stat_by_country"][0]["new_cases"]) + make_string("Активні випадки",jsoned["latest_stat_by_country"][0]["active_cases"])+ make_string("Усього смертей",jsoned["latest_stat_by_country"][0]["total_deaths"])+ make_string("Смертей за останню добу",jsoned["latest_stat_by_country"][0]["new_deaths"])+ make_string("Усього видужаних",jsoned["latest_stat_by_country"][0]["total_recovered"])+ make_string("У критичному стані",jsoned["latest_stat_by_country"][0]["serious_critical"]) + make_string("Дата",jsoned["latest_stat_by_country"][0]["record_date"])
     return message
 
@@ -69,16 +68,15 @@ def get_info_by_location(message):
 		bot.send_message(message.chat.id, "Відправте свої координати")
 		bot.register_next_step_handler(message, by_coordinates)
 	elif(message.text=="Додати інформацію про випадок зараження"):
-		bot.send_message(message.chat.id, "Дайте детальний опис ситуації")
+		bot.send_message(message.chat.id, "Введіть адрес, в якому був зареєстрований випадок зараження")
 		bot.register_next_step_handler(message, add_covid_case)
 
 def by_coordinates(message):
-	querystring["latitude"] = message.location.latitude
-	querystring["longitude"] = message.location.longitude
-	response = apiRequest(geo_url,headers,querystring).text
-	jsoned = json.loads(response)
-	bot.send_message(message.chat.id, jsoned[0]["Country"])
-	#я говорил тебе об этой функции, обнови
+    locationstring["latitude"] = message.location.latitude
+    locationstring["longitude"] = message.location.longitude
+    response = apiRequest(geo_url,get_headers("geocodeapi.p.rapidapi.com"),locationstring)
+    jsoned = json.loads(response)
+    bot.send_message(message.chat.id, get_stat_by_country(jsoned[0]["Country"]))
 
 def by_country_name(message):
 	country_cases = nameApiRequest(country_by_name_url, country_by_name_headers)
@@ -92,16 +90,6 @@ def by_country_name(message):
 			found=1
 	if(found==0):
 		bot.send_message(message.chat.id, "На жаль, не має інформації про країну "+message.text)
-
-    
-@bot.message_handler(content_types=['location'])
-def get_info_by_location(message):
-    locationstring["latitude"] = message.location.latitude
-    locationstring["longitude"] = message.location.longitude
-    response = apiRequest(geo_url,get_headers("geocodeapi.p.rapidapi.com"),locationstring)
-    jsoned = json.loads(response)
-
-    bot.send_message(message.chat.id, get_stat_by_country(jsoned[0]["Country"]))
 
 def by_city_name(message):
 	bot.send_message(message.chat.id, "...")
