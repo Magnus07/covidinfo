@@ -79,11 +79,6 @@ def enter_adress(message):
     user["name"] = message.text
     bot.register_next_step_handler(msg,save_adress)
 
-@bot.message_handler(commands=['inform'])
-def handle_start(message):
-    msg = bot.send_message(message.from_user.id, "Уведіть своє ім'я та прізвище: ")
-    bot.register_next_step_handler(msg,enter_adress)
-
 
 @bot.message_handler(content_types=['text'])
 def get_info_by_location(message):
@@ -97,8 +92,8 @@ def get_info_by_location(message):
 		bot.send_message(message.chat.id, "Відправте свої координати")
 		bot.register_next_step_handler(message, by_coordinates)
 	elif(message.text=="Додати інформацію про випадок зараження"):
-		bot.send_message(message.chat.id, "Введіть адрес, в якому був зареєстрований випадок зараження")
-		bot.register_next_step_handler(message, add_covid_case)
+		bot.send_message(message.chat.id, "Уведіть своє ім'я та прізвище: ")
+		bot.register_next_step_handler(message, enter_adress)
 
 def by_coordinates(message):
     locationstring["latitude"] = message.location.latitude
@@ -123,8 +118,5 @@ def by_country_name(message):
 def by_city_name(message):
 	bot.send_message(message.chat.id, "...")
 	#просто затычка для поиска по городу
-
-def add_covid_case(message):
-	bot.send_message(message.chat.id, "...")
-	#просто затычка для добавления нового случая
+    
 bot.polling()
