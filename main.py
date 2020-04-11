@@ -1,8 +1,18 @@
 import telebot
+import pymongo
 import requests
 import os
 import json
 
+
+client     = pymongo.MongoClient(os.environ.get("MONGODB"))
+db         = client.test_database
+collection = db.test_collection
+
+user = {
+    "name" : "",
+    "adress" : ""
+}
 
 covid_url = "https://coronavirus-monitor.p.rapidapi.com/coronavirus/random_masks_usage_instructions.php"
 covid_country_by_name = "https://coronavirus-monitor.p.rapidapi.com/coronavirus/latest_stat_by_country.php"
@@ -53,6 +63,23 @@ bot = telebot.TeleBot(os.environ.get("API"))
 @bot.message_handler(commands=['start'])
 def start_message(message):
     bot.send_message(message.chat.id, 'Получать статистику по названию или координатам?')
+
+
+def save_adress(message):
+    users = db.users
+    user["adress"] = message.text
+    users.insert_one(user)
+    bot.send_message(message.from_user.id, "Інформація збережена")
+
+def enter_adress(message):
+    msg = bot.send_message(message.from_user.id, "Укажіть адресу")
+    user["name"] = message.text
+    bot.register_next_step_handler(msg,save_adress)
+
+@bot.message_handler(commands=['inform'])
+def handle_start(message):
+    msg = bot.send_message(message.from_user.id, "Уведіть своє ім'я та прізвище: ")
+    bot.register_next_step_handler(msg,enter_adress)
 		
 @bot.message_handler(content_types=['text'])
 def get_info_by_location(message):
@@ -77,6 +104,7 @@ def get_info_by_location(message):
     jsoned = json.loads(response)
 
     bot.send_message(message.chat.id, get_stat_by_country(jsoned[0]["Country"]))
+            
 
 
 bot.polling()
